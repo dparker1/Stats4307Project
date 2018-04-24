@@ -47,13 +47,17 @@ ui <- fluidPage(
            ),
            mainPanel(
              plotOutput("StockCompScatter"),
-             htmlOutput("StockCompTest")
+             htmlOutput("StockCompTest"),
+             plotOutput("ResidualComp")
            )
          )
       )
     }
     else if(i == 12){
-      tabPanel("Commodities")
+      tabPanel("Commodities",
+        sidebarLayout(),
+        mainPanel()
+        )
     }
     else{
       tabPanel(stockSymbols[i],
@@ -69,7 +73,8 @@ ui <- fluidPage(
             plotOutput(paste0("Hist", i)),
             plotOutput(paste0("Norm", i)),
             plotOutput(paste0("RegSelf", i)),
-            htmlOutput(paste0("RegSelfInfo", i))
+            htmlOutput(paste0("RegSelfInfo", i)),
+            plotOutput(paste0("RegularResidual",i))
           )
         )
       )
@@ -90,8 +95,19 @@ server <- function(input, output){
     stock1 <- stockFileData[[as.numeric(input$stock1)]]$logReturns
     stock2 <- stockFileData[[as.numeric(input$stock2)]]$logReturns
     t <- t.test(stock1, stock2)
-    c <- chisq.test(stock1, stock2)
-    paste("<h2 style=\"text-align:center\"> Test for Population Mean Difference = 0 </br>P-Value =", t$p.value, "</br>Test for Independence </br>P-Value =", c$p.value)
+    k <- ks.test(stock1, stock2)
+    regression <- lm(stock2 ~ stock1)
+    sum <- summary(regression)
+    analysis <- anova(regression)
+    
+    paste("<h2 style=\"text-align:center\"> Test for Population Mean Difference = 0 </br>P-Value =", round(t$p.value,6), "</br>Test for Independence </br>P-Value =", round(k$p.value,6), "</br>Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6), "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6), "</br> P-Value for Slope =", round(analysis$`Pr(>F)`[1], 6), "</br>R<sup>2</sup>=", round(sum$r.squared, 6))
+  })
+  output$ResidualComp <- renderPlot({
+    stock1 <- stockFileData[[as.numeric(input$stock1)]]$logReturns
+    stock2 <- stockFileData[[as.numeric(input$stock2)]]$logReturns
+    regression <- lm(stock2 ~ stock1)
+    res <- resid(regression)
+    plot(res)
   })
   lapply(1:10, function(i){
     output[[paste0("Hist", i)]] <- renderPlot({
@@ -111,7 +127,7 @@ server <- function(input, output){
     output[[paste0("RegSelfInfo", i)]] <- reactive({
       regression <- lm(logReturns ~ Number, stockFileData[[i]])
       analysis <- anova(regression)
-      paste("<h2 style=\"text-align:center\"> Linear Regression Coefficients: </br>Slope =", round(regression$coefficients[2], 6), ", Intercept =", round(regression$coefficients[1], 6), "</br> P-Value for Slope =", round(analysis$`Pr(>F)`[1], 6),", R<sup>2</sup>=" ,round(summary(regression)$r.squared,6))
+      paste("<h2 style=\"text-align:center\"> Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6), "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6), "</br> P-Value for Slope =", round(analysis$`Pr(>F)`[1], 6),"</br> R<sup>2</sup>=" ,round(summary(regression)$r.squared,6))
     })
     output[[paste0("ConfIntMean", i)]] <- reactive({
       s <- t.test(stockFileData[[i]]$logReturns, conf.level = input[[paste0("ConfInputMean", i)]]);
@@ -127,6 +143,11 @@ server <- function(input, output){
       n <- rnorm(length(stockFileData[[i]]$logReturns), m, s);
       ks <- ks.test(stockFileData[[1]]$logReturns, n);
       paste("<h3 style=\"text-align:center\"> Kolmogorov-Smirnov run vs. Normal with parameters:</br>&mu;' =", round(m,6), "</br>&sigma;' =", round(s,6), "</br>with results:</br>P-Value =", round(ks$p.value, 6))
+    })
+    output[[paste0("RegularResidual", i)]] <- renderPlot({
+      regression <- lm(logReturns ~ Number, stockFileData[[i]])
+      res <- resid(regression)
+      plot(res)
     })
   })
 }
