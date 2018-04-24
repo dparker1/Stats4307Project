@@ -39,7 +39,18 @@ ui <- fluidPage(
       )
     }
     else if(i == 11){
-      tabPanel("Stocks")
+      tabPanel("Stocks",
+         sidebarLayout(
+           sidebarPanel(
+             selectInput("stock1", "Stock 1 (Independent):", stockIndices),
+             selectInput("stock2", "Stock 2 (Dependent):", stockIndices)
+           ),
+           mainPanel(
+             plotOutput("StockCompScatter"),
+             htmlOutput("StockCompTest")
+           )
+         )
+      )
     }
     else if(i == 12){
       tabPanel("Commodities")
@@ -68,6 +79,20 @@ ui <- fluidPage(
 
 server <- function(input, output){
   output$Names <- renderText("Kyle Fram, kdf2118<br/>Joshua Lederer, jsl2255<br/>Dean Parker, dap2180")
+  output$StockCompScatter <- renderPlot({
+    stock1 <- stockFileData[[as.numeric(input$stock1)]]$logReturns
+    stock2 <- stockFileData[[as.numeric(input$stock2)]]$logReturns
+    plot(stock1, stock2)
+    regression <- lm(stock2 ~ stock1)
+    abline(regression)
+  })
+  output$StockCompTest <- reactive({
+    stock1 <- stockFileData[[as.numeric(input$stock1)]]$logReturns
+    stock2 <- stockFileData[[as.numeric(input$stock2)]]$logReturns
+    t <- t.test(stock1, stock2)
+    c <- chisq.test(stock1, stock2)
+    paste("<h2 style=\"text-align:center\"> Test for Population Mean Difference = 0 </br>P-Value =", t$p.value, "</br>Test for Independence </br>P-Value =", c$p.value)
+  })
   lapply(1:10, function(i){
     output[[paste0("Hist", i)]] <- renderPlot({
       data <- stockFileData[[i]]$logReturns;
