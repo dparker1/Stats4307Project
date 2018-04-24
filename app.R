@@ -29,6 +29,7 @@ for(i in 1:length(comFileNames)){
 ui <- fluidPage(
   theme = "style.css",
   titlePanel("Stock Analytic Viewer"),
+  htmlOutput("Names"),
   do.call(tabsetPanel, lapply(1:10, function(i){
     tabPanel(stockSymbols[i],
       sidebarLayout(
@@ -51,10 +52,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output){
-  output$Names <- renderText("Kyle Fram<br/>Joshua Lederer<br/>Dean Parker")
-  output$Header <- reactive({
-    paste("<h2 style=\"text-align:center\">", stockSymbols[as.numeric(input$stock)], " Log Returns Histogram</h2>")
-  })
+  output$Names <- renderText("Kyle Fram, kdf2118<br/>Joshua Lederer, jsl2255<br/>Dean Parker, dap2180")
   lapply(1:10, function(i){
     output[[paste0("Hist", i)]] <- renderPlot({
       data <- stockFileData[[i]]$logReturns;
