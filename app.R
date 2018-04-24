@@ -34,9 +34,9 @@ ui <- fluidPage(
     tabPanel(stockSymbols[i],
       sidebarLayout(
         sidebarPanel(
-          sliderInput(paste0("ConfInputMean", i), "Mean Confidence Level", 0, 1, .95, step = 0.001),
+          numericInput(paste0("ConfInputMean", i), "Mean Confidence Level", 0.95, 0, 1, step = 0.001),
           htmlOutput(paste0("ConfIntMean", i)),
-          sliderInput(paste0("ConfInputVar", i), "Variance Confidence Level", 0, 1, .95, step = 0.001),
+          numericInput(paste0("ConfInputVar", i), "Variance Confidence Level", 0.95, 0, 1, step = 0.001),
           htmlOutput(paste0("ConfIntVar", i)),
           htmlOutput(paste0("KS", i))
         ),
