@@ -29,14 +29,17 @@ for(i in 1:length(comFileNames)){
 ui <- fluidPage(
   theme = "style.css",
   titlePanel("Stock Analytic Viewer"),
-  do.call(tabsetPanel, lapply(0:11, function(i){
+  do.call(tabsetPanel, lapply(0:12, function(i){
     if(i == 0){
       tabPanel("Home",
         htmlOutput("Names")
       )
     }
     else if(i == 11){
-      tabPanel("Comparer")
+      tabPanel("Stocks")
+    }
+    else if(i == 12){
+      tabPanel("Commodities")
     }
     else{
       tabPanel(stockSymbols[i],
@@ -65,7 +68,7 @@ server <- function(input, output){
   lapply(1:10, function(i){
     output[[paste0("Hist", i)]] <- renderPlot({
       data <- stockFileData[[i]]$logReturns;
-      hist(data, col = "#FF0000", main = paste("Stock", stockSymbols[i]), xlab = "Log Returns")
+      hist(data, col = "#FF0000", main = paste(stockSymbols[i], "Histogram"), xlab = "Log Returns")
     })
     output[[paste0("Norm", i)]] <- renderPlot({
       data <- stockFileData[[i]]$logReturns;
