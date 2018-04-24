@@ -1,4 +1,7 @@
-library(shiny);
+if(!require("shiny")){
+  install.packages("shiny")
+  library("shiny")
+}
 
 stockFileNames <- paste("StockData/", list.files("./StockData"), sep = "");
 stockSymbols <- sub("StockData/", "", sub(".csv", "", stockFileNames));
