@@ -29,25 +29,34 @@ for(i in 1:length(comFileNames)){
 ui <- fluidPage(
   theme = "style.css",
   titlePanel("Stock Analytic Viewer"),
-  htmlOutput("Names"),
-  do.call(tabsetPanel, lapply(1:10, function(i){
-    tabPanel(stockSymbols[i],
-      sidebarLayout(
-        sidebarPanel(
-          numericInput(paste0("ConfInputMean", i), "Mean Confidence Level", 0.95, 0, 1, step = 0.001),
-          htmlOutput(paste0("ConfIntMean", i)),
-          numericInput(paste0("ConfInputVar", i), "Variance Confidence Level", 0.95, 0, 1, step = 0.001),
-          htmlOutput(paste0("ConfIntVar", i)),
-          htmlOutput(paste0("KS", i))
-        ),
-        mainPanel(
-          plotOutput(paste0("Hist", i)),
-          plotOutput(paste0("Norm", i)),
-          plotOutput(paste0("RegSelf", i)),
-          htmlOutput(paste0("RegSelfInfo", i))
+  do.call(tabsetPanel, lapply(0:11, function(i){
+    if(i == 0){
+      tabPanel("Home",
+        htmlOutput("Names")
+      )
+    }
+    else if(i == 11){
+      tabPanel("Comparer")
+    }
+    else{
+      tabPanel(stockSymbols[i],
+        sidebarLayout(
+          sidebarPanel(
+            numericInput(paste0("ConfInputMean", i), "Mean Confidence Level", 0.95, 0, 1, step = 0.001),
+            htmlOutput(paste0("ConfIntMean", i)),
+            numericInput(paste0("ConfInputVar", i), "Variance Confidence Level", 0.95, 0, 1, step = 0.001),
+            htmlOutput(paste0("ConfIntVar", i)),
+            htmlOutput(paste0("KS", i))
+          ),
+          mainPanel(
+            plotOutput(paste0("Hist", i)),
+            plotOutput(paste0("Norm", i)),
+            plotOutput(paste0("RegSelf", i)),
+            htmlOutput(paste0("RegSelfInfo", i))
+          )
         )
       )
-    )
+    }
   }))
 )
 
