@@ -71,7 +71,7 @@ server <- function(input, output){
     output[[paste0("RegSelfInfo", i)]] <- reactive({
       regression <- lm(logReturns ~ Number, stockFileData[[i]])
       analysis <- anova(regression)
-      paste("<h2 style=\"text-align:center\"> Linear Regression Coefficients: </br>Slope =", round(regression$coefficients[2], 6), "</br> Intercept =", round(regression$coefficients[1], 6), "</br> P-Value for Slope =", round(analysis$`Pr(>F)`[1], 6))
+      paste("<h2 style=\"text-align:center\"> Linear Regression Coefficients: </br>Slope =", round(regression$coefficients[2], 6), ", Intercept =", round(regression$coefficients[1], 6), "</br> P-Value for Slope =", round(analysis$`Pr(>F)`[1], 6),", R<sup>2</sup>=" ,round(summary(regression)$r.squared,6))
     })
     output[[paste0("ConfIntMean", i)]] <- reactive({
       s <- t.test(stockFileData[[i]]$logReturns, conf.level = input[[paste0("ConfInputMean", i)]]);
