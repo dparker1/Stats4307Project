@@ -79,7 +79,7 @@ ui <- fluidPage(
             htmlOutput(paste0("ConfIntMean", i)),
             numericInput(paste0("ConfInputVar", i), "Variance Confidence Level", 0.95, 0, 1, step = 0.001),
             htmlOutput(paste0("ConfIntVar", i)),
-            htmlOutput(paste0("KS", i))
+            htmlOutput(paste0("Independence", i))
           ),
           mainPanel(
             plotOutput(paste0("Hist", i)),
@@ -99,7 +99,9 @@ server <- function(input, output){
   output$StockCompScatter <- renderPlot({
     stock1 <- stockFileData[[as.numeric(input$stock1)]]$logReturns
     stock2 <- stockFileData[[as.numeric(input$stock2)]]$logReturns
-    plot(stock1, stock2)
+    stock1Symbol <- stockSymbols[as.numeric(input$stock1)]
+    stock2Symbol <- stockSymbols[as.numeric(input$stock2)]
+    plot(stock1, stock2, main = paste(stock2Symbol, "vs.", stock1Symbol), xlab = stock1Symbol, ylab = stock2Symbol)
     regression <- lm(stock2 ~ stock1)
     abline(regression)
   })
@@ -110,9 +112,12 @@ server <- function(input, output){
     k <- ks.test(stock1, stock2)
     regression <- lm(stock2 ~ stock1)
     sum <- summary(regression)
-    analysis <- anova(regression)
     
-    paste("<h2 style=\"text-align:center\"> Test for Population Mean Difference = 0 </br>P-Value =", round(t$p.value,6), "</br>Test for Independence </br>P-Value =", round(k$p.value,6), "</br>Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6), "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6), "</br> P-Value for Slope =", round(analysis$`Pr(>F)`[1], 6), "</br>R<sup>2</sup>=", round(sum$r.squared, 6))
+    paste("<h2 style=\"text-align:center\"> Test for Population Mean Difference = 0 </br>P-Value =", round(t$p.value,6),
+          "</br>Test for Independence </br>P-Value =", round(k$p.value,6),
+          "</br>Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6),
+          "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6), 
+          "</br>R<sup>2</sup>=", round(sum$r.squared, 6))
   })
   output$ResidualComp <- renderPlot({
     stock1 <- stockFileData[[as.numeric(input$stock1)]]$logReturns
@@ -124,7 +129,9 @@ server <- function(input, output){
   output$StockComReg <- renderPlot({
       stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
       com <- comFileData[[as.numeric(input$com)]]$logReturns
-      plot(com, stock)
+      stockSymbol <- stockSymbols[as.numeric(input$stock)]
+      comSymbol <- comSymbols[as.numeric(input$com)]
+      plot(com, stock, main = paste(stockSymbol, "vs.", comSymbol), xlab = comSymbol, ylab = stockSymbol)
       regression <- lm(stock ~ com)
       abline(regression)
   })
@@ -144,7 +151,7 @@ server <- function(input, output){
     com <- comFileData[[as.numeric(input$com)]]$logReturns
     regression <- lm(stock ~ com)
     res<-resid(regression)
-    plot(res)
+    plot(res, main = paste(stockSymbols[as.numeric(input$stock)], "Fitted Residuals"), xlab = "Index", ylab = "Residual")
   })
   output$MultiLinearReg <- renderTable({
     df = data.frame(matrix(vector(), 252, length(comSymbols)+1, dimnames =list(c(),c("stock", comSymbols))))
@@ -196,7 +203,7 @@ server <- function(input, output){
       paste("<h3 style=\"text-align:center\">",input[[paste0("ConfInputVar", i)]]*100,"% Confidence Interval: </br>",
             round(s[1],6), " < &sigma;<sup>2</sup> < ", round(s[2],6), "</h3>", sep="")
     })
-    output[[paste0("KS", i)]] <- reactive({
+    output[[paste0("Independence", i)]] <- reactive({
       m <- mean(stockFileData[[i]]$logReturns);
       s <- sqrt(var(stockFileData[[i]]$logReturns));
       n <- rnorm(length(stockFileData[[i]]$logReturns), m, s);
@@ -206,7 +213,7 @@ server <- function(input, output){
     output[[paste0("RegularResidual", i)]] <- renderPlot({
       regression <- lm(logReturns ~ Number, stockFileData[[i]])
       res <- resid(regression)
-      plot(res)
+      plot(res, main = paste(stockSymbols[i], "Fitted Residuals"), xlab = "Index", ylab = "Residual")
     })
   })
 }
