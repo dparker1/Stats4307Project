@@ -48,7 +48,7 @@ ui <- fluidPage(
          sidebarLayout(
            sidebarPanel(
              selectInput("stock1", "Stock 1 (Independent):", stockIndices),
-             selectInput("stock2", "Stock 2 (Dependent):", stockIndices)
+             selectInput("stock2", "Stock 2 (Dependent):", stockIndices, selected = 2)
            ),
            mainPanel(
              plotOutput("StockCompScatter"),
@@ -69,8 +69,9 @@ ui <- fluidPage(
           mainPanel(
             plotOutput("StockComReg"),
             htmlOutput("StockComTest"),
-            plotOutput("ResidualStockCom"),
-            tableOutput("MultiLinearReg")
+            plotOutput("StockComResidual"),
+            tableOutput("MultiLinearReg"),
+            plotOutput("StudentResidual")
           )
         )
   )
@@ -117,18 +118,20 @@ server <- function(input, output){
     regression <- lm(stock2 ~ stock1)
     sum <- summary(regression)
     
-    paste("<h2 style=\"text-align:center\"> Test for Population Mean Difference = 0 </br>P-Value =", round(t$p.value,6),
-          "</br>Test for Independence </br>P-Value =", round(c$p.value,6),
-          "</br>Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6),
+    paste("<h2 style=\"text-align:center\">Test for Population Mean Difference = 0</br>P-Value =", round(t$p.value,6),
+          "</br>Test for Independence</br>P-Value =", round(c$p.value,6),
+          "</br>Linear Regression Coefficients:</br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6),
           "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6), 
           "</br>R<sup>2</sup>=", round(sum$r.squared, 6))
   })
   output$ResidualComp <- renderPlot({
     stock1 <- stockFileData[[as.numeric(input$stock1)]]$logReturns
     stock2 <- stockFileData[[as.numeric(input$stock2)]]$logReturns
+    stock1Symbol <- stockSymbols[as.numeric(input$stock1)]
+    stock2Symbol <- stockSymbols[as.numeric(input$stock2)]
     regression <- lm(stock2 ~ stock1)
     res <- resid(regression)
-    plot(res)
+    plot(res, main = paste(stock2Symbol, "vs.", stock1Symbol, "Residuals"), xlab = "Index", ylab = "Residual")
   })
   output$StockComReg <- renderPlot({
       stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
@@ -150,7 +153,7 @@ server <- function(input, output){
           "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6),
           "</br>R<sup>2</sup>=", round(sum$r.squared, 6))
   })
-  output$ResidualStockCom <- renderPlot({
+  output$StockComResidual <- renderPlot({
     stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
     com <- comFileData[[as.numeric(input$com)]]$logReturns
     regression <- lm(stock ~ com)
@@ -158,16 +161,8 @@ server <- function(input, output){
     plot(res, main = paste(stockSymbols[as.numeric(input$stock)], "Fitted Residuals"), xlab = "Index", ylab = "Residual")
   })
   output$MultiLinearReg <- renderTable({
-    df = data.frame(matrix(vector(), 252, length(comSymbols)+1, dimnames =list(c(),c("stock", comSymbols))))
-    df[["stock"]] <- stockFileData[[as.numeric(input$stock)]]$logReturns
-    s <- ""
-    for (i in 1:length(comFileData)){
-      s <- paste0(s, comSymbols[i], "+")
-      df[[i+1]] <- comFileData[[i]]$logReturns
-    }
-    s <- sub("\\+$", "", s)
-    f <- as.formula(paste("stock ~", s))
-    sumMultiRegression <- summary(lm(f, df))
+    reg <- multiLinearRegression(input, stockFileData, comSymbols, comFileData)
+    sumMultiRegression <- summary(reg)
     ta = data.frame(matrix(vector(), length(comSymbols) + 1, 0))
     ta[["Variable"]] <- c("Intercept", comSymbols)
     ta[["Estimate"]] <- sumMultiRegression$coefficients[,"Estimate"]
@@ -175,6 +170,10 @@ server <- function(input, output){
     ta[["t-Value"]] <- sumMultiRegression$coefficients[,"t value"]
     ta[["P-Value"]] <- sumMultiRegression$coefficients[,"Pr(>|t|)"]
     ta
+  })
+  output$StudentResidual <- renderPlot({
+    reg <- multiLinearRegression(input, stockFileData, comSymbols, comFileData)
+    plot(rstudent(reg), main = paste("Studentized", stockSymbols[as.numeric(input$stock)], "Multilinear Residuals"), xlab = "Index", ylab = "Residual")
   })
   lapply(1:10, function(i){
     output[[paste0("Hist", i)]] <- renderPlot({
@@ -234,6 +233,19 @@ chisqInterval <- function(x, cf){
 chisqIndependence <- function(x, y){
   tabl <- table(bin(data.frame(x, y)))
   c <- chisq.test(tabl)
+}
+
+multiLinearRegression <- function(input, stockFileData, comSymbols, comFileData){
+  df = data.frame(matrix(vector(), 252, length(comSymbols)+1, dimnames =list(c(),c("stock", comSymbols))))
+  df[["stock"]] <- stockFileData[[as.numeric(input$stock)]]$logReturns
+  s <- ""
+  for (i in 1:length(comFileData)){
+    s <- paste0(s, comSymbols[i], "+")
+    df[[i+1]] <- comFileData[[i]]$logReturns
+  }
+  s <- sub("\\+$", "", s)
+  f <- as.formula(paste("stock ~", s))
+  lm(f, df)
 }
 
 shinyApp(ui, server)

@@ -29,6 +29,9 @@ body {
 	margin-top: 10px;
 }
 
+.col-sm-4 {
+	position: fixed;
+}
 .col-sm-8 {
 	float: right;
 }
