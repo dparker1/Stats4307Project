@@ -8,7 +8,7 @@ stockSymbols <- sub("StockData/", "", sub(".csv", "", stockFileNames));
 stockIndices <- 1:length(stockSymbols);
 
 comFileNames <- paste("ComData/", list.files("./ComData"), sep = "");
-comSymbols <- c(sub("ComData/", "", sub(".csv", "", comFileNames)),"All");
+comSymbols <- sub("ComData/", "", sub(".csv", "", comFileNames));
 comIndices <- 1:length(comSymbols);
 
 
@@ -65,7 +65,8 @@ ui <- fluidPage(
           mainPanel(
             plotOutput("StockComReg"),
             htmlOutput("StockComTest"),
-            plotOutput("ResidualStockCom")
+            plotOutput("ResidualStockCom"),
+            tableOutput("MultiLinearReg")
           )
         )
   )
@@ -121,27 +122,11 @@ server <- function(input, output){
     plot(res)
   })
   output$StockComReg <- renderPlot({
-    stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
-    if(as.numeric(input$com)==length(comSymbols)){
-      df = data.frame(matrix(vector(), 252, length(comFileData) + 1, dimnames =list(c(),c("stock", comFileNames))))
-      df[["stock"]] <- stock
-      s<-""
-      for (i in 1:length((comFileData))){
-        paste0(s, comSymbols[i], "+")
-        df[[comFileNames[i]]]<-comFileData[[i]]$logReturns
-      }
-      s<-sub("\\+$", "", s)
-      com <- comFileData[[as.numeric(input$com)]]$logReturns
-      plot(com, stock)
-      regression <- lm(stock ~ s)
-      abline(regression)
-    }
-    else{
+      stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
       com <- comFileData[[as.numeric(input$com)]]$logReturns
       plot(com, stock)
       regression <- lm(stock ~ com)
       abline(regression)
-    }
   })
   output$StockComTest <- reactive({
     stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
@@ -149,9 +134,10 @@ server <- function(input, output){
     k <- ks.test(stock, com)
     regression <- lm(stock ~ com)
     sum <- summary(regression)
-    analysis <- anova(regression)
-    
-    paste("<h2 style=\"text-align:center\">", "Test for Independence </br>P-Value =", round(k$p.value,6), "</br>Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6), "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6), "</br> P-Value for Slope =", round(analysis$`Pr(>F)`[1], 6), "</br>R<sup>2</sup>=", round(sum$r.squared, 6))
+    paste("<h2 style=\"text-align:center\">Test for Independence </br>P-Value =", round(k$p.value,6),
+          "</br>Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6),
+          "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6),
+          "</br>R<sup>2</sup>=", round(sum$r.squared, 6))
   })
   output$ResidualStockCom <- renderPlot({
     stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
@@ -159,6 +145,25 @@ server <- function(input, output){
     regression <- lm(stock ~ com)
     res<-resid(regression)
     plot(res)
+  })
+  output$MultiLinearReg <- renderTable({
+    df = data.frame(matrix(vector(), 252, length(comSymbols)+1, dimnames =list(c(),c("stock", comSymbols))))
+    df[["stock"]] <- stockFileData[[as.numeric(input$stock)]]$logReturns
+    s <- ""
+    for (i in 1:length(comFileData)){
+      s <- paste0(s, comSymbols[i], "+")
+      df[[i+1]] <- comFileData[[i]]$logReturns
+    }
+    s <- sub("\\+$", "", s)
+    f <- as.formula(paste("stock ~", s))
+    sumMultiRegression <- summary(lm(f, df))
+    ta = data.frame(matrix(vector(), length(comSymbols) + 1, 0))
+    ta[["Variable"]] <- c("Intercept", comSymbols)
+    ta[["Estimate"]] <- sumMultiRegression$coefficients[,"Estimate"]
+    ta[["Standard Error"]] <- sumMultiRegression$coefficients[, "Std. Error"]
+    ta[["t-Value"]] <- sumMultiRegression$coefficients[,"t value"]
+    ta[["P-Value"]] <- sumMultiRegression$coefficients[,"Pr(>|t|)"]
+    ta
   })
   lapply(1:10, function(i){
     output[[paste0("Hist", i)]] <- renderPlot({
@@ -177,16 +182,19 @@ server <- function(input, output){
     })
     output[[paste0("RegSelfInfo", i)]] <- reactive({
       regression <- lm(logReturns ~ Number, stockFileData[[i]])
-      analysis <- anova(regression)
-      paste("<h2 style=\"text-align:center\"> Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6), "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6), "</br> P-Value for Slope =", round(analysis$`Pr(>F)`[1], 6),"</br> R<sup>2</sup>=" ,round(summary(regression)$r.squared,6))
+      paste("<h2 style=\"text-align:center\"> Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =",
+            round(regression$coefficients[2], 6), "</br> Intercept (&Beta;<sub>0</sub>) =",
+            round(regression$coefficients[1], 6), "</br> R<sup>2</sup>=" ,round(summary(regression)$r.squared,6))
     })
     output[[paste0("ConfIntMean", i)]] <- reactive({
       s <- t.test(stockFileData[[i]]$logReturns, conf.level = input[[paste0("ConfInputMean", i)]]);
-      paste("<h3 style=\"text-align:center\">",input[[paste0("ConfInputMean", i)]]*100,"% Confidence Interval: </br>", round(s$conf.int[1],6), " < &mu; < ", round(s$conf.int[2],6), "</h3>", sep="")
+      paste("<h3 style=\"text-align:center\">",input[[paste0("ConfInputMean", i)]]*100,"% Confidence Interval: </br>",
+            round(s$conf.int[1],6), " < &mu; < ", round(s$conf.int[2],6), "</h3>", sep="")
     })
     output[[paste0("ConfIntVar", i)]] <- reactive({
       s <- chisqInterval(stockFileData[[i]]$logReturns, input[[paste0("ConfInputVar", i)]]);
-      paste("<h3 style=\"text-align:center\">",input[[paste0("ConfInputVar", i)]]*100,"% Confidence Interval: </br>", round(s[1],6), " < &sigma;<sup>2</sup> < ", round(s[2],6), "</h3>", sep="")
+      paste("<h3 style=\"text-align:center\">",input[[paste0("ConfInputVar", i)]]*100,"% Confidence Interval: </br>",
+            round(s[1],6), " < &sigma;<sup>2</sup> < ", round(s[2],6), "</h3>", sep="")
     })
     output[[paste0("KS", i)]] <- reactive({
       m <- mean(stockFileData[[i]]$logReturns);

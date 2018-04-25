@@ -2,6 +2,10 @@ body {
 	background-color : #FFD77D;
 }
 
+.table {
+	width: 100% !important;
+}
+
 .nav {
 	z-index: 2;
 	position: -webkit-sticky;
