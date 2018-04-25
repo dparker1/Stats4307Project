@@ -8,8 +8,9 @@ stockSymbols <- sub("StockData/", "", sub(".csv", "", stockFileNames));
 stockIndices <- 1:length(stockSymbols);
 
 comFileNames <- paste("ComData/", list.files("./ComData"), sep = "");
-comSymbols <- sub("ComData/", "", sub(".csv", "", comFileNames));
+comSymbols <- c(sub("ComData/", "", sub(".csv", "", comFileNames)),"All");
 comIndices <- 1:length(comSymbols);
+
 
 names(stockIndices) <- stockSymbols;
 names(comIndices) <- comSymbols;
@@ -121,10 +122,26 @@ server <- function(input, output){
   })
   output$StockComReg <- renderPlot({
     stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
-    com <- comFileData[[as.numeric(input$com)]]$logReturns
-    plot(com, stock)
-    regression <- lm(stock ~ com)
-    abline(regression)
+    if(as.numeric(input$com)==length(comSymbols)){
+      df = data.frame(matrix(vector(), 252, length(comFileData) + 1, dimnames =list(c(),c("stock", comFileNames))))
+      df[["stock"]] <- stock
+      s<-""
+      for (i in 1:length((comFileData))){
+        paste0(s, comSymbols[i], "+")
+        df[[comFileNames[i]]]<-comFileData[[i]]$logReturns
+      }
+      s<-sub("\\+$", "", s)
+      com <- comFileData[[as.numeric(input$com)]]$logReturns
+      plot(com, stock)
+      regression <- lm(stock ~ s)
+      abline(regression)
+    }
+    else{
+      com <- comFileData[[as.numeric(input$com)]]$logReturns
+      plot(com, stock)
+      regression <- lm(stock ~ com)
+      abline(regression)
+    }
   })
   output$StockComTest <- reactive({
     stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
@@ -193,5 +210,7 @@ chisqInterval <- function(x, cf){
   r[2] <- df*var(x)/qchisq((1-cf)/2, df);
   r
 }
+
+
 
 shinyApp(ui, server)
