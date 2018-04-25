@@ -2,6 +2,10 @@ if(!require("shiny")){
   install.packages("shiny")
   library("shiny")
 }
+if(!require("OneR")){
+  install.packages("OneR")
+  library("OneR")
+}
 
 stockFileNames <- paste("StockData/", list.files("./StockData"), sep = "");
 stockSymbols <- sub("StockData/", "", sub(".csv", "", stockFileNames));
@@ -79,7 +83,7 @@ ui <- fluidPage(
             htmlOutput(paste0("ConfIntMean", i)),
             numericInput(paste0("ConfInputVar", i), "Variance Confidence Level", 0.95, 0, 1, step = 0.001),
             htmlOutput(paste0("ConfIntVar", i)),
-            htmlOutput(paste0("Independence", i))
+            htmlOutput(paste0("Normality", i))
           ),
           mainPanel(
             plotOutput(paste0("Hist", i)),
@@ -109,12 +113,12 @@ server <- function(input, output){
     stock1 <- stockFileData[[as.numeric(input$stock1)]]$logReturns
     stock2 <- stockFileData[[as.numeric(input$stock2)]]$logReturns
     t <- t.test(stock1, stock2)
-    k <- ks.test(stock1, stock2)
+    c <- chisqIndependence(stock1, stock2)
     regression <- lm(stock2 ~ stock1)
     sum <- summary(regression)
     
     paste("<h2 style=\"text-align:center\"> Test for Population Mean Difference = 0 </br>P-Value =", round(t$p.value,6),
-          "</br>Test for Independence </br>P-Value =", round(k$p.value,6),
+          "</br>Test for Independence </br>P-Value =", round(c$p.value,6),
           "</br>Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6),
           "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6), 
           "</br>R<sup>2</sup>=", round(sum$r.squared, 6))
@@ -138,10 +142,10 @@ server <- function(input, output){
   output$StockComTest <- reactive({
     stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
     com <- comFileData[[as.numeric(input$com)]]$logReturns
-    k <- ks.test(stock, com)
     regression <- lm(stock ~ com)
     sum <- summary(regression)
-    paste("<h2 style=\"text-align:center\">Test for Independence </br>P-Value =", round(k$p.value,6),
+    c <- chisqIndependence(com, stock)
+    paste("<h2 style=\"text-align:center\">Test for Independence </br>P-Value =", round(c$p.value,6),
           "</br>Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6),
           "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6),
           "</br>R<sup>2</sup>=", round(sum$r.squared, 6))
@@ -203,12 +207,13 @@ server <- function(input, output){
       paste("<h3 style=\"text-align:center\">",input[[paste0("ConfInputVar", i)]]*100,"% Confidence Interval: </br>",
             round(s[1],6), " < &sigma;<sup>2</sup> < ", round(s[2],6), "</h3>", sep="")
     })
-    output[[paste0("Independence", i)]] <- reactive({
+    output[[paste0("Normality", i)]] <- reactive({
       m <- mean(stockFileData[[i]]$logReturns);
       s <- sqrt(var(stockFileData[[i]]$logReturns));
       n <- rnorm(length(stockFileData[[i]]$logReturns), m, s);
       ks <- ks.test(stockFileData[[1]]$logReturns, n);
-      paste("<h3 style=\"text-align:center\"> Kolmogorov-Smirnov run vs. Normal with parameters:</br>&mu;' =", round(m,6), "</br>&sigma;' =", round(s,6), "</br>with results:</br>P-Value =", round(ks$p.value, 6))
+      paste("<h3 style=\"text-align:center\"> Kolmogorov-Smirnov run vs. Normal with parameters:</br>&mu;' =", round(m,6),
+            "</br>&sigma;' =", round(s,6), "</br>with results:</br>P-Value =", round(ks$p.value, 6))
     })
     output[[paste0("RegularResidual", i)]] <- renderPlot({
       regression <- lm(logReturns ~ Number, stockFileData[[i]])
@@ -226,6 +231,9 @@ chisqInterval <- function(x, cf){
   r
 }
 
-
+chisqIndependence <- function(x, y){
+  tabl <- table(bin(data.frame(x, y)))
+  c <- chisq.test(tabl)
+}
 
 shinyApp(ui, server)
