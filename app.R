@@ -55,9 +55,19 @@ ui <- fluidPage(
     }
     else if(i == 12){
       tabPanel("Commodities",
-        sidebarLayout(),
-        mainPanel()
+        sidebarLayout(
+          sidebarPanel(
+            selectInput("com", "Commodity (Independent):", comIndices),
+            selectInput("stock", "Stock (Dependent):", stockIndices)
+          ),
+
+          mainPanel(
+            plotOutput("StockComReg"),
+            htmlOutput("StockComTest"),
+            plotOutput("ResidualStockCom")
+          )
         )
+  )
     }
     else{
       tabPanel(stockSymbols[i],
@@ -107,6 +117,30 @@ server <- function(input, output){
     stock2 <- stockFileData[[as.numeric(input$stock2)]]$logReturns
     regression <- lm(stock2 ~ stock1)
     res <- resid(regression)
+    plot(res)
+  })
+  output$StockComReg <- renderPlot({
+    stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
+    com <- comFileData[[as.numeric(input$com)]]$logReturns
+    plot(com, stock)
+    regression <- lm(stock ~ com)
+    abline(regression)
+  })
+  output$StockComTest <- reactive({
+    stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
+    com <- comFileData[[as.numeric(input$com)]]$logReturns
+    k <- ks.test(stock, com)
+    regression <- lm(stock ~ com)
+    sum <- summary(regression)
+    analysis <- anova(regression)
+    
+    paste("<h2 style=\"text-align:center\">", "Test for Independence </br>P-Value =", round(k$p.value,6), "</br>Linear Regression Coefficients: </br>Slope (&Beta;<sub>1</sub>) =", round(regression$coefficients[2], 6), "</br> Intercept (&Beta;<sub>0</sub>) =", round(regression$coefficients[1], 6), "</br> P-Value for Slope =", round(analysis$`Pr(>F)`[1], 6), "</br>R<sup>2</sup>=", round(sum$r.squared, 6))
+  })
+  output$ResidualStockCom <- renderPlot({
+    stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
+    com <- comFileData[[as.numeric(input$com)]]$logReturns
+    regression <- lm(stock ~ com)
+    res<-resid(regression)
     plot(res)
   })
   lapply(1:10, function(i){
