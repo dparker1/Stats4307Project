@@ -62,7 +62,7 @@ ui <- fluidPage(
       tabPanel("Commodities",
         sidebarLayout(
           sidebarPanel(
-            selectInput("com", "Commodity (Independent):", comIndices),
+            selectInput("com", "Commodity (Independent):", comIndices, selected = 2),
             selectInput("stock", "Stock (Dependent):", stockIndices)
           ),
 
