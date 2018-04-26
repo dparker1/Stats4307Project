@@ -236,11 +236,11 @@ chisqIndependence <- function(x, y){
 }
 
 multiLinearRegression <- function(input, stockFileData, comSymbols, comFileData){
-  df = data.frame(matrix(vector(), 252, length(comSymbols)+1, dimnames =list(c(),c("stock", comSymbols))))
+  df = data.frame(matrix(vector(), 252, length(comSymbols)+1, dimnames =list(c(),c("stock", sub(" ", "_", comSymbols)))))
   df[["stock"]] <- stockFileData[[as.numeric(input$stock)]]$logReturns
   s <- ""
   for (i in 1:length(comFileData)){
-    s <- paste0(s, comSymbols[i], "+")
+    s <- paste0(s, sub(" ", "_", comSymbols[i]), "+")
     df[[i+1]] <- comFileData[[i]]$logReturns
   }
   s <- sub("\\+$", "", s)
