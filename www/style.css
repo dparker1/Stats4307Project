@@ -2,6 +2,14 @@ body {
 	background-color : #FFD77D;
 }
 
+h3 {
+	text-align: center;
+}
+
+h2 {
+	text-align: center;
+}
+
 .table {
 	width: 100% !important;
 }
