@@ -107,9 +107,9 @@ server <- function(input, output){
     stock2 <- stockFileData[[as.numeric(input$stock2)]]$logReturns
     stock1Symbol <- stockSymbols[as.numeric(input$stock1)]
     stock2Symbol <- stockSymbols[as.numeric(input$stock2)]
-    plot(stock1, stock2, main = paste(stock2Symbol, "vs.", stock1Symbol), xlab = stock1Symbol, ylab = stock2Symbol)
+    plot(stock1, stock2, main = paste(stock2Symbol, "vs.", stock1Symbol), xlab = stock1Symbol, ylab = stock2Symbol, col = "#36baff")
     regression <- lm(stock2 ~ stock1)
-    abline(regression)
+    abline(regression, col = "#ff3656")
   })
   output$StockCompTest <- reactive({
     stock1 <- stockFileData[[as.numeric(input$stock1)]]$logReturns
@@ -132,16 +132,16 @@ server <- function(input, output){
     stock2Symbol <- stockSymbols[as.numeric(input$stock2)]
     regression <- lm(stock2 ~ stock1)
     res <- resid(regression)
-    plot(res, main = paste(stock2Symbol, "vs.", stock1Symbol, "Residuals"), xlab = "Index", ylab = "Residual")
+    plot(res, main = paste(stock2Symbol, "vs.", stock1Symbol, "Residuals"), xlab = "Index", ylab = "Residual", col = "#36baff")
   })
   output$StockComReg <- renderPlot({
       stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
       com <- comFileData[[as.numeric(input$com)]]$logReturns
       stockSymbol <- stockSymbols[as.numeric(input$stock)]
       comSymbol <- comSymbols[as.numeric(input$com)]
-      plot(com, stock, main = paste(stockSymbol, "vs.", comSymbol), xlab = comSymbol, ylab = stockSymbol)
+      plot(com, stock, main = paste(stockSymbol, "vs.", comSymbol), xlab = comSymbol, ylab = stockSymbol, col = "#36baff")
       regression <- lm(stock ~ com)
-      abline(regression)
+      abline(regression, col = "#ff3656")
   })
   output$StockComTest <- reactive({
     stock <- stockFileData[[as.numeric(input$stock)]]$logReturns
@@ -161,7 +161,8 @@ server <- function(input, output){
     com <- comFileData[[as.numeric(input$com)]]$logReturns
     regression <- lm(stock ~ com)
     res<-resid(regression)
-    plot(res, main = paste(stockSymbols[as.numeric(input$stock)], "Fitted Residuals"), xlab = "Index", ylab = "Residual")
+    plot(res, main = paste(stockSymbols[as.numeric(input$stock)], "Fitted Residuals"),
+         xlab = "Index", ylab = "Residual",col = "#36baff")
   })
   output$MultiLinearReg <- renderTable({
     reg <- multiLinearRegression(input, stockFileData, comSymbols, comFileData)
@@ -176,22 +177,24 @@ server <- function(input, output){
   })
   output$StudentResidual <- renderPlot({
     reg <- multiLinearRegression(input, stockFileData, comSymbols, comFileData)
-    plot(rstudent(reg), main = paste("Studentized", stockSymbols[as.numeric(input$stock)], "Multilinear Residuals"), xlab = "Index", ylab = "Residual")
+    plot(rstudent(reg), main = paste("Studentized", stockSymbols[as.numeric(input$stock)], "Multilinear Residuals"),
+         xlab = "Index", ylab = "Residual",col = "#36baff")
   })
   lapply(1:10, function(i){
     output[[paste0("Hist", i)]] <- renderPlot({
       data <- stockFileData[[i]]$logReturns;
-      hist(data, col = "#FF0000", main = paste(stockSymbols[i], "Histogram"), xlab = "Log Returns")
+      hist(data, col = "#36baff", main = paste(stockSymbols[i], "Histogram"), xlab = "Log Returns")
     })
     output[[paste0("Norm", i)]] <- renderPlot({
       data <- stockFileData[[i]]$logReturns;
-      qqnorm(data, main = paste(stockSymbols[i], "Normality Plot"));
-      qqline(data);
+      qqnorm(data, main = paste(stockSymbols[i], "Normality Plot"), col = "#36baff");
+      qqline(data, col = "#ff3656");
     })
     output[[paste0("RegSelf", i)]] <- renderPlot({
-      plot(stockFileData[[i]]$Number, stockFileData[[i]]$logReturns, main = paste(stockSymbols[i], "Regression"), xlab = "Weekdays into year", ylab = "Log Returns")
+      plot(stockFileData[[i]]$Number, stockFileData[[i]]$logReturns, main = paste(stockSymbols[i], "Regression"),
+           xlab = "Weekdays into year", ylab = "Log Returns", col = "#36baff")
       regression <- lm(logReturns ~ Number, stockFileData[[i]])
-      abline(regression)
+      abline(regression, col = "#ff3656")
     })
     output[[paste0("RegSelfInfo", i)]] <- reactive({
       regression <- lm(logReturns ~ Number, stockFileData[[i]])
@@ -226,7 +229,7 @@ server <- function(input, output){
     output[[paste0("RegularResidual", i)]] <- renderPlot({
       regression <- lm(logReturns ~ Number, stockFileData[[i]])
       res <- resid(regression)
-      plot(res, main = paste(stockSymbols[i], "Fitted Residuals"), xlab = "Index", ylab = "Residual")
+      plot(res, main = paste(stockSymbols[i], "Fitted Residuals"), xlab = "Index", ylab = "Residual",col = "#36baff")
     })
   })
 }
