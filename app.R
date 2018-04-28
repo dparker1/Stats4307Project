@@ -127,8 +127,20 @@ ui <- fluidPage(
 # Define server outputs
 server <- function(input, output){
   
-  # Names output on home page
+  # Output for home page
   output$Names <- renderText("Kyle Fram, kdf2118<br/>Joshua Lederer, jsl2255<br/>Dean Parker, dap2180")
+  output$Explanation <- renderText("</br>The following stocks were chosen to be used:</br>
+                                   <table class=\"hometable\"><tr><th>Stock Ticker </th><th> Company Name</th></tr>
+                                   <tr><td>BH</td><td>Steak n Shake</td></tr>
+                                   <tr><td>CMG</td><td>Chipotle Mexican Grill</td></tr>
+                                   <tr><td>DENN</td><td>Denny's Corp.</td></tr>
+                                   <tr><td>DPZ</td><td>Domino's Pizza</td></tr>
+                                   <tr><td>NATH</td><td>Nathan's Famous</td></tr>
+                                   <tr><td>MCD</td><td>McDonald's Corp.</td></tr>
+                                   <tr><td>PZZA</td><td>Papa Johns</td></tr>
+                                   <tr><td>QSR</td><td>Burger King Holdings</td></tr>
+                                   <tr><td>SHAK</td><td>Shake Shack</td></tr>
+                                   <tr><td>WEN</td><td>Wendys Corp.</td></tr></table>")
   
   # Scatter plot and regression for stock vs. stock tab
   output$StockCompScatter <- renderPlot({
