@@ -18,7 +18,7 @@ h2 {
 	border-collapse: collapse;
 }
 
-.hometable>tbody>td,th {
+.hometable>tbody>tr>th {
 	border: 2px solid #000000;
 	text-align: left;
 	padding: 8px;

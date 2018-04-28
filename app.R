@@ -140,7 +140,8 @@ server <- function(input, output){
                                    <tr><td>PZZA</td><td>Papa Johns</td></tr>
                                    <tr><td>QSR</td><td>Burger King Holdings</td></tr>
                                    <tr><td>SHAK</td><td>Shake Shack</td></tr>
-                                   <tr><td>WEN</td><td>Wendys Corp.</td></tr></table>")
+                                   <tr><td>WEN</td><td>Wendys Corp.</td></tr></table></br>
+                                   It is recommended to use this app in fullscreen.")
   
   # Scatter plot and regression for stock vs. stock tab
   output$StockCompScatter <- renderPlot({
