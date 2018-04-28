@@ -57,7 +57,8 @@ ui <- fluidPage(
     # Home page tab
     if(i == 0){
       tabPanel("Home",
-        htmlOutput("Names")
+        htmlOutput("Names"),
+        htmlOutput("Explanation")
       )
     }
     
